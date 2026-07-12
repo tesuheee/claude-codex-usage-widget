@@ -11,6 +11,7 @@ namespace Headroom
             TestExhaustedFixtures(root);
             TestNoDataFixture(root);
             TestNestedObjectsDoNotBreakCodexParser();
+            TestCodexWindowDurationMapping();
             Console.WriteLine("ParserTests: passed");
         }
 
@@ -60,6 +61,31 @@ namespace Headroom
             Equal(25.0, codex.WeeklyUsed.Value, "Codex nested weekly used");
         }
 
+        static void TestCodexWindowDurationMapping()
+        {
+            string weeklyOnlyJson = "{" +
+                "\"rate_limit\":{\"primary_window\":{" +
+                "\"used_percent\":10,\"limit_window_seconds\":604800,\"reset_at\":1784487852}," +
+                "\"secondary_window\":null}}";
+            var weeklyOnly = UsageParsers.ParseCodexApi(weeklyOnlyJson);
+            True(!weeklyOnly.FiveHourUsed.HasValue, "Codex weekly-only has no 5h value");
+            Equal(10.0, weeklyOnly.WeeklyUsed.Value, "Codex weekly-only weekly used");
+
+            string standardJson = "{" +
+                "\"primary_window\":{\"used_percent\":11,\"limit_window_seconds\":18000}," +
+                "\"secondary_window\":{\"used_percent\":22,\"limit_window_seconds\":604800}}";
+            var standard = UsageParsers.ParseCodexApi(standardJson);
+            Equal(11.0, standard.FiveHourUsed.Value, "Codex duration-mapped 5h used");
+            Equal(22.0, standard.WeeklyUsed.Value, "Codex duration-mapped weekly used");
+
+            string reversedJson = "{" +
+                "\"primary_window\":{\"used_percent\":33,\"limit_window_seconds\":604800}," +
+                "\"secondary_window\":{\"used_percent\":44,\"limit_window_seconds\":18000}}";
+            var reversed = UsageParsers.ParseCodexApi(reversedJson);
+            Equal(44.0, reversed.FiveHourUsed.Value, "Codex reversed 5h used");
+            Equal(33.0, reversed.WeeklyUsed.Value, "Codex reversed weekly used");
+        }
+
         static string ReadFixture(string root, string scenario, string fileName)
         {
             return File.ReadAllText(Path.Combine(root, "docs", "fixtures", scenario, fileName));
@@ -81,6 +107,12 @@ namespace Headroom
         {
             if (Math.Abs(expected - actual) > 0.0001)
                 throw new InvalidOperationException(label + ": expected " + expected + ", got " + actual);
+        }
+
+        static void True(bool value, string label)
+        {
+            if (!value)
+                throw new InvalidOperationException(label + ": expected true");
         }
     }
 }

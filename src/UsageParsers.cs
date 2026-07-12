@@ -5,6 +5,8 @@ namespace Headroom
 {
     static class UsageParsers
     {
+        const long OneDaySeconds = 24 * 60 * 60;
+
         public static UsageData ParseClaudeApi(string json)
         {
             var data = new UsageData { Name = "Claude", Source = "Claude API", UpdatedAt = DateTime.Now };
@@ -60,26 +62,38 @@ namespace Headroom
             var rateLimit = Json.Object(root, "rate_limit");
             var searchRoot = rateLimit ?? root;
 
-            var primary = Json.Object(searchRoot, "primary_window");
-            if (primary != null)
-            {
-                data.FiveHourUsed = Json.Double(primary, "used_percent");
-                long? reset = Json.Long(primary, "reset_at");
-                if (reset.HasValue && reset.Value > 0)
-                    data.FiveHourReset = ConvertUnixSecondsToLegacyFormat(reset.Value);
-            }
-
-            var secondary = Json.Object(searchRoot, "secondary_window");
-            if (secondary != null)
-            {
-                data.WeeklyUsed = Json.Double(secondary, "used_percent");
-                long? reset = Json.Long(secondary, "reset_at");
-                if (reset.HasValue && reset.Value > 0)
-                    data.WeeklyReset = ConvertUnixSecondsToLegacyFormat(reset.Value);
-            }
+            AssignCodexWindow(data, Json.Object(searchRoot, "primary_window"), true);
+            AssignCodexWindow(data, Json.Object(searchRoot, "secondary_window"), false);
 
             if (!data.HasAnyValue()) data.Status = "no_data";
             return data;
+        }
+
+        static void AssignCodexWindow(UsageData data, System.Collections.Generic.Dictionary<string, object> window, bool isPrimary)
+        {
+            if (window == null) return;
+
+            long? duration = Json.Long(window, "limit_window_seconds");
+            bool isWeekly = duration.HasValue
+                ? duration.Value >= OneDaySeconds
+                : !isPrimary;
+
+            double? used = Json.Double(window, "used_percent");
+            long? reset = Json.Long(window, "reset_at");
+            string resetText = reset.HasValue && reset.Value > 0
+                ? ConvertUnixSecondsToLegacyFormat(reset.Value)
+                : null;
+
+            if (isWeekly)
+            {
+                data.WeeklyUsed = used;
+                data.WeeklyReset = resetText;
+            }
+            else
+            {
+                data.FiveHourUsed = used;
+                data.FiveHourReset = resetText;
+            }
         }
 
         static string ConvertIsoToLegacyFormat(string iso)
