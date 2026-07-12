@@ -84,6 +84,13 @@ namespace Headroom
             var reversed = UsageParsers.ParseCodexApi(reversedJson);
             Equal(44.0, reversed.FiveHourUsed.Value, "Codex reversed 5h used");
             Equal(33.0, reversed.WeeklyUsed.Value, "Codex reversed weekly used");
+
+            string unknownDurationJson = "{" +
+                "\"primary_window\":{\"used_percent\":55,\"limit_window_seconds\":86400}," +
+                "\"secondary_window\":{\"used_percent\":66,\"limit_window_seconds\":2592000}}";
+            var unknownDuration = UsageParsers.ParseCodexApi(unknownDurationJson);
+            Equal(55.0, unknownDuration.FiveHourUsed.Value, "Codex unknown primary duration fallback");
+            Equal(66.0, unknownDuration.WeeklyUsed.Value, "Codex unknown secondary duration fallback");
         }
 
         static string ReadFixture(string root, string scenario, string fileName)

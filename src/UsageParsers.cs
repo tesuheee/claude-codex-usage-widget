@@ -5,7 +5,8 @@ namespace Headroom
 {
     static class UsageParsers
     {
-        const long OneDaySeconds = 24 * 60 * 60;
+        const long FiveHourWindowSeconds = 5 * 60 * 60;
+        const long WeeklyWindowSeconds = 7 * 24 * 60 * 60;
 
         public static UsageData ParseClaudeApi(string json)
         {
@@ -74,9 +75,8 @@ namespace Headroom
             if (window == null) return;
 
             long? duration = Json.Long(window, "limit_window_seconds");
-            bool isWeekly = duration.HasValue
-                ? duration.Value >= OneDaySeconds
-                : !isPrimary;
+            bool isWeekly = duration == WeeklyWindowSeconds ||
+                (duration != FiveHourWindowSeconds && !isPrimary);
 
             double? used = Json.Double(window, "used_percent");
             long? reset = Json.Long(window, "reset_at");
