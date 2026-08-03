@@ -44,6 +44,23 @@ namespace Headroom
             return data;
         }
 
+        // Extracts the signed-in identity from GET /api/oauth/profile so the card can
+        // show which account the token belongs to. Returns null on anything unexpected;
+        // the account label is cosmetic and must never break a usage refresh.
+        public static string ParseClaudeAccount(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return null;
+            var root = Json.ParseObject(json);
+            if (root == null) return null;
+
+            var account = Json.Object(root, "account");
+            if (account == null) return null;
+
+            string email = Json.String(account, "email");
+            if (string.IsNullOrWhiteSpace(email)) email = Json.String(account, "display_name");
+            return string.IsNullOrWhiteSpace(email) ? null : email;
+        }
+
         public static UsageData ParseCodexApi(string json)
         {
             var data = new UsageData { Name = "Codex", Source = "Codex API", UpdatedAt = DateTime.Now };

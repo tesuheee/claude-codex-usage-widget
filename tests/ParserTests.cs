@@ -12,7 +12,28 @@ namespace Headroom
             TestNoDataFixture(root);
             TestNestedObjectsDoNotBreakCodexParser();
             TestCodexWindowDurationMapping();
+            TestClaudeAccountParsing();
             Console.WriteLine("ParserTests: passed");
+        }
+
+        static void TestClaudeAccountParsing()
+        {
+            Equal("user@example.com",
+                UsageParsers.ParseClaudeAccount("{\"account\":{\"email\":\"user@example.com\",\"display_name\":\"Sam\"}}"),
+                "account email preferred");
+
+            Equal("Sam",
+                UsageParsers.ParseClaudeAccount("{\"account\":{\"display_name\":\"Sam\"}}"),
+                "account falls back to display_name");
+
+            // Every unexpected shape must yield null rather than throw -- the label is
+            // cosmetic and must never take down a usage refresh.
+            Equal(null, UsageParsers.ParseClaudeAccount(null), "null json");
+            Equal(null, UsageParsers.ParseClaudeAccount(""), "empty json");
+            Equal(null, UsageParsers.ParseClaudeAccount("not json"), "malformed json");
+            Equal(null, UsageParsers.ParseClaudeAccount("{}"), "no account object");
+            Equal(null, UsageParsers.ParseClaudeAccount("{\"account\":{}}"), "empty account object");
+            Equal(null, UsageParsers.ParseClaudeAccount("{\"account\":{\"email\":\"\"}}"), "blank email");
         }
 
         static void TestOkFixture(string root)
