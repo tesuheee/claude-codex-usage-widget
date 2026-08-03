@@ -40,6 +40,7 @@ namespace Headroom
         public string Name;
         public string Source;
         public string Status;
+        public string Account;
         public DateTime UpdatedAt;
         public double? FiveHourUsed;
         public double? WeeklyUsed;

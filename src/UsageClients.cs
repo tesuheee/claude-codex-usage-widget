@@ -38,6 +38,7 @@ namespace Headroom
     static class ClaudeUsageClient
     {
         const string UsageUrl = "https://api.anthropic.com/api/oauth/usage";
+        const string ProfileUrl = "https://api.anthropic.com/api/oauth/profile";
         const string TokenUrl = "https://console.anthropic.com/v1/oauth/token";
         const string ClientId = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
         static readonly string[] Scopes = "user:inference user:profile".Split(' ');
@@ -104,6 +105,7 @@ namespace Headroom
 
                             string json = await resp.Content.ReadAsStringAsync();
                             var data = UsageParsers.ParseClaudeApi(json);
+                            data.Account = await TryFetchAccountAsync(httpClient, credentials.AccessToken);
                             return new UsageFetchResult
                             {
                                 Data = data,
@@ -121,6 +123,31 @@ namespace Headroom
                 return UsageFetchResult.FetchError("claude-api-error.txt", ex.ToString());
             }
             return UsageFetchResult.FetchError("claude-api-error.txt", "No response");
+        }
+
+        // Best-effort lookup of the signed-in account. Never throws and never affects the
+        // usage result: a failure here just leaves the card without an account label. The
+        // token is already in hand, so this costs one extra GET per successful refresh.
+        static async Task<string> TryFetchAccountAsync(HttpClient httpClient, string accessToken)
+        {
+            try
+            {
+                using (var req = new HttpRequestMessage(HttpMethod.Get, ProfileUrl))
+                {
+                    req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    req.Headers.Add("anthropic-beta", "oauth-2025-04-20");
+                    using (var resp = await httpClient.SendAsync(req))
+                    {
+                        if (!resp.IsSuccessStatusCode) return null;
+                        return UsageParsers.ParseClaudeAccount(await resp.Content.ReadAsStringAsync());
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                DebugLog.Write("claude-profile-error.txt", ex.ToString());
+                return null;
+            }
         }
 
         static bool IsTokenExpired(long expiresAtMs)

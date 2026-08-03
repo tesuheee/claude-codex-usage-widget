@@ -192,6 +192,12 @@ namespace Headroom
             using (var dim = new SolidBrush(Color.FromArgb(185, 190, 205)))
             {
                 g.DrawString(state.Name, title, white, x + 30, y + 10);
+                string account = state.Data != null ? state.Data.Account : null;
+                if (!string.IsNullOrEmpty(account))
+                {
+                    using (var accountFont = new Font("Segoe UI", ResetFontSize, FontStyle.Regular))
+                        g.DrawString(account, accountFont, dim, x + 30, y + 32);
+                }
                 int badgeX = x + 100;
                 if (stale)
                     badgeX += DrawBadge(g, T("古い", "Stale"), badgeX, y + 14, Color.FromArgb(110, 85, 20), Color.FromArgb(180, 150, 50)) + 6;
