@@ -109,6 +109,7 @@ namespace Headroom
         public int BoostDurationMinutes = 30;
         public int BoostIntervalMinutes = 1;
         public bool AlwaysOnTop = false;
+        public bool StartWithWindows = false;
         public bool ShowCodex = true;
         public bool ShowClaude = true;
         public string LayoutMode = "horizontal";
@@ -171,6 +172,7 @@ namespace Headroom
             BoostDurationMinutes = other.BoostDurationMinutes;
             BoostIntervalMinutes = other.BoostIntervalMinutes;
             AlwaysOnTop = other.AlwaysOnTop;
+            StartWithWindows = other.StartWithWindows;
             ShowCodex = other.ShowCodex;
             ShowClaude = other.ShowClaude;
             LayoutMode = other.LayoutMode;

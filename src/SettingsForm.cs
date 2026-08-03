@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -35,6 +35,7 @@ namespace Headroom
         readonly DarkTextBox boostDuration = new DarkTextBox();
         readonly DarkTextBox boostInterval = new DarkTextBox();
         readonly DarkComboBox topMost   = new DarkComboBox();
+        readonly DarkComboBox startWithWindows = new DarkComboBox();
         readonly DarkComboBox showCodex  = new DarkComboBox();
         readonly DarkComboBox showClaude = new DarkComboBox();
         readonly DarkComboBox claudeLoginMethod = new DarkComboBox();
@@ -177,6 +178,8 @@ namespace Headroom
             AddRow(leftCard, "Language", "Language", "", "", language, ref leftY);
             SetupCombo(topMost, settings.AlwaysOnTop ? "enabled" : "disabled", new[] { T("有効", "Enabled"), T("無効", "Disabled") });
             AddRow(leftCard, "最前面に固定", "Always on top", "", "", topMost, ref leftY);
+            SetupCombo(startWithWindows, settings.StartWithWindows ? "enabled" : "disabled", new[] { T("有効", "Enabled"), T("無効", "Disabled") });
+            AddRow(leftCard, "サインイン時に起動", "Start at sign-in", "", "", startWithWindows, ref leftY);
             SetupCombo(showCodex,  settings.ShowCodex  ? "enabled" : "disabled", new[] { T("有効", "Enabled"), T("無効", "Disabled") });
             SetupCombo(showClaude, settings.ShowClaude ? "enabled" : "disabled", new[] { T("有効", "Enabled"), T("無効", "Disabled") });
             AddRow(leftCard, "Codex 表示", "Codex display", "", "", showCodex,  ref leftY);
@@ -541,6 +544,7 @@ namespace Headroom
             else if (box == fiveResetMode || box == weeklyResetMode) box.SelectedIndex = string.Equals(value, "relative", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
             else if (box == claudeLoginMethod || box == codexLoginMethod) box.SelectedIndex = LoginMethodIndex(value);
             else if (box == topMost)                           box.SelectedIndex = string.Equals(value, "enabled",   StringComparison.OrdinalIgnoreCase) ? 0 : 1;
+            else if (box == startWithWindows)                  box.SelectedIndex = string.Equals(value, "enabled",   StringComparison.OrdinalIgnoreCase) ? 0 : 1;
             else if (box == showCodex || box == showClaude)   box.SelectedIndex = string.Equals(value, "enabled",   StringComparison.OrdinalIgnoreCase) ? 0 : 1;
             else if (box == language)                          box.SelectedIndex = string.Equals(value, "en",        StringComparison.OrdinalIgnoreCase) ? 1 : 0;
         }
@@ -708,6 +712,7 @@ namespace Headroom
             warningPercent.TextChanged += apply;
             criticalPercent.TextChanged += apply;
             topMost.SelectedIndexChanged += apply;
+            startWithWindows.SelectedIndexChanged += apply;
         }
 
         void ReloadComboItems()
@@ -719,6 +724,7 @@ namespace Headroom
             int fiveSel     = fiveResetMode.SelectedIndex;
             int weeklySel   = weeklyResetMode.SelectedIndex;
             int topMostSel  = topMost.SelectedIndex;
+            int startupSel  = startWithWindows.SelectedIndex;
             int showCxSel   = showCodex.SelectedIndex;
             int showClSel   = showClaude.SelectedIndex;
             int claudeLoginSel = claudeLoginMethod.SelectedIndex;
@@ -751,6 +757,10 @@ namespace Headroom
             topMost.Items.Clear();
             topMost.Items.AddRange(new[] { T("有効", "Enabled"), T("無効", "Disabled") });
             topMost.SelectedIndex = Math.Max(0, Math.Min(1, topMostSel));
+
+            startWithWindows.Items.Clear();
+            startWithWindows.Items.AddRange(new[] { T("有効", "Enabled"), T("無効", "Disabled") });
+            startWithWindows.SelectedIndex = Math.Max(0, Math.Min(1, startupSel));
 
             showCodex.Items.Clear();
             showCodex.Items.AddRange(new[] { T("有効", "Enabled"), T("無効", "Disabled") });
@@ -807,6 +817,9 @@ namespace Headroom
             settings.WarningRemainingPercent = Math.Max(critical, warning);
             settings.CriticalRemainingPercent = Math.Min(critical, settings.WarningRemainingPercent);
             settings.AlwaysOnTop = topMost.SelectedIndex == 0;
+            // The registry is the source of truth: if the write fails (policy, locked
+            // hive) the setting must not claim a state the machine does not have.
+            settings.StartWithWindows = StartupRegistration.Apply(startWithWindows.SelectedIndex == 0);
         }
 
         static string LoginMethodValue(int selectedIndex)
