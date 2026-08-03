@@ -40,6 +40,7 @@ namespace Headroom
                 settings.BoostDurationMinutes = ReadInt(root, "boostDurationMinutes", settings.BoostDurationMinutes);
                 settings.BoostIntervalMinutes = ReadInt(root, "boostIntervalMinutes", settings.BoostIntervalMinutes);
                 settings.AlwaysOnTop = ReadBool(root, "alwaysOnTop", settings.AlwaysOnTop);
+                settings.StartWithWindows = ReadBool(root, "startWithWindows", settings.StartWithWindows);
                 settings.ShowCodex = ReadBool(root, "showCodex", settings.ShowCodex);
                 settings.ShowClaude = ReadBool(root, "showClaude", settings.ShowClaude);
                 settings.LayoutMode = NormalizeLayoutMode(ReadString(root, "layoutMode", settings.LayoutMode));
@@ -75,6 +76,7 @@ namespace Headroom
                     { "boostDurationMinutes", settings.BoostDurationMinutes },
                     { "boostIntervalMinutes", settings.BoostIntervalMinutes },
                     { "alwaysOnTop", settings.AlwaysOnTop },
+                    { "startWithWindows", settings.StartWithWindows },
                     { "showCodex", settings.ShowCodex },
                     { "showClaude", settings.ShowClaude },
                     { "layoutMode", settings.LayoutMode },

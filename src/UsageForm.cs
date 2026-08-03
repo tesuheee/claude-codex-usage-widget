@@ -108,6 +108,20 @@ namespace Headroom
             if (HeadroomOptions.FixtureMode) SetupFixtureWatcher();
             else SetupCredentialWatchers();
 
+            // The Run key is the source of truth, not settings.json. A user who removes
+            // the entry from Task Manager's Startup tab -- or moves the portable exe --
+            // should not be silently overridden by a stale setting.
+            if (!HeadroomOptions.FixtureMode)
+            {
+                StartupRegistration.RefreshPathIfRegistered();
+                bool registered = StartupRegistration.IsEnabled();
+                if (registered != settings.StartWithWindows)
+                {
+                    settings.StartWithWindows = registered;
+                    settings.Save();
+                }
+            }
+
             MouseDown += OnMouseDown;
             MouseMove += OnMouseMove;
             MouseUp += (s, e) =>

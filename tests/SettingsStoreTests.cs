@@ -15,7 +15,8 @@ namespace Headroom
                 TestLoadsJsonValues(dir);
                 TestLegacyMigration(dir);
                 TestInvalidJsonFallsBack(dir);
-                Console.WriteLine("SettingsStoreTests: passed");
+                TestStartupCommandQuoting();
+            Console.WriteLine("SettingsStoreTests: passed");
             }
             finally
             {
@@ -98,6 +99,26 @@ namespace Headroom
             var settings = SettingsStore.Load(path, null);
             Equal("en", settings.Language, "invalid default language");
             Equal(760, settings.Width, "invalid default width");
+        }
+
+        // The Run key value must survive a path containing spaces -- unquoted, Windows
+        // parses at the first space and silently launches the wrong thing (or nothing).
+        static void TestStartupCommandQuoting()
+        {
+            Equal("\"C:\\Program Files\\Headroom\\Headroom.exe\"",
+                StartupRegistration.CommandFor("C:\\Program Files\\Headroom\\Headroom.exe"),
+                "quotes a path containing spaces");
+
+            Equal("\"C:\\Tools\\Headroom.exe\"",
+                StartupRegistration.CommandFor("C:\\Tools\\Headroom.exe"),
+                "quotes a path without spaces");
+
+            Equal("\"C:\\Tools\\Headroom.exe\"",
+                StartupRegistration.CommandFor("\"C:\\Tools\\Headroom.exe\""),
+                "does not double-quote an already-quoted path");
+
+            Equal(null, StartupRegistration.CommandFor(null), "null path");
+            Equal(null, StartupRegistration.CommandFor("   "), "blank path");
         }
 
         static void True(bool value, string label)
